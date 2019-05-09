@@ -6,6 +6,7 @@
 ;; BOILERPLATE
 (defn multiply [a b] (* a b))
 
+;;INSTRUMENT STATE
 (defonce inst-state (reagent/atom {:status 0
                                    :osc "sine"
                                    :detune 100
@@ -15,16 +16,35 @@
                                    :freq 3000
                                    :minFreq 2000
                                    :maxFreq 6000
-                                   :play 1     }))
+                                   :play 1}))
 
 (defn get-app-element []
   (gdom/getElement "app"))
 
-(defn sound-play-status [args]
-  (swap! inst-state assoc-in [:play] args))
+;; Define Audio Context, Oscillator & Gain Node
+(defonce context (js/window.AudioContext.))
+(defonce osc (.createOscillator context))
+(defonce amp (.createGain context))
 
-;; THEREMIN
-;; Instrument State
+;; Create Wiring
+(. osc connect amp)
+(. amp connect (.-destination context))
+
+;; Initialise Oscillator & Gain
+(set! (.-type osc) (:osc @inst-state))
+(set! (.-value (.-detune osc)) (:detune @inst-state))
+(set! (.-value (.-gain amp)) (:gain @inst-state))
+
+
+(defn start-playing []
+  (if (= 1 (:play @inst-state))
+    (do (. osc start)
+        (swap! inst-state update-in [:play] dec))))
+
+(defn stop-playing []
+  (if (= 0 (:play @inst-state))
+    (do (. osc stop)
+        (swap! inst-state update-in [:play] inc))))
 
 (defn hello-world []
   [:div
@@ -32,11 +52,10 @@
    [:h3 "Use your Gamepad"]
    [:input {:type "button"
             :value "Start"
-            :onClick #(sound-play-status 1)}]
+            :onClick #(start-playing)}]
    [:input {:type "button"
             :value "Stop"
-            :onClick #(sound-play-status 0)}]
-   [:p (:play @inst-state)]
+            :onClick #(stop-playing)}]
    ])
 
 (defn mount [el]
@@ -45,25 +64,6 @@
 (defn mount-app-element []
   (when-let [el (get-app-element)]
     (mount el)))
-
-;; Define Audio Context, Oscillator & Gain Node
-(defonce context (js/window.AudioContext.))
-(defonce osc (.createOscillator context))
-(defonce amp (.createGain context))
-
-;; Initialise Oscillator & Gain
-(set! (.-type osc) (:osc @inst-state))
-(set! (.-value (.-detune osc)) (:detune @inst-state))
-(set! (.-value (.-gain amp)) (:gain @inst-state))
-
-;; Start oscillator
-(if (= 1 (:play @inst-state))
-      (. osc start))
-(if (= 0 (:play @inst-state))
-       (. osc stop))
-;; Create Wiring
-(. osc connect amp)
-(. amp connect (.-destination context))
 
 ;; mouse event capture function ....uncomment once done with button
 ;; (defn capture-mouse [ev]
@@ -86,9 +86,3 @@
   ;; your application
   ;; (swap! app-state update-in [:__figwheel_counter] inc)
 )
-
-;; uncomment to stop sound if needed
-;; (. osc stop)
-;; refresh to restart .. will come up with a better method later
-
-
