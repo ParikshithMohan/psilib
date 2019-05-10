@@ -1,4 +1,4 @@
-(ns ^:figwheel-hooks psilib.core
+ (ns ^:figwheel-hooks psilib.core
   (:require
    [goog.dom :as gdom]
    [reagent.core :as reagent :refer [atom]]))
@@ -16,7 +16,7 @@
                                    :freq 3000
                                    :minFreq 2000
                                    :maxFreq 6000
-                                   :play 1}))
+                                   :play 0}))
 
 (defn get-app-element []
   (gdom/getElement "app"))
@@ -37,14 +37,13 @@
 
 
 (defn start-playing []
-  (if (= 1 (:play @inst-state))
-    (do (. osc start)
-        (swap! inst-state update-in [:play] dec))))
+  (if (= 0 (:play @inst-state))
+    (do (swap! inst-state assoc-in [:play] 1)
+        (. osc start 0))))
 
 (defn stop-playing []
-  (if (= 0 (:play @inst-state))
-    (do (. osc stop)
-        (swap! inst-state update-in [:play] inc))))
+     (. osc stop)
+        (swap! inst-state assoc-in [:play] 0))
 
 (defn hello-world []
   [:div
@@ -56,6 +55,7 @@
    [:input {:type "button"
             :value "Stop"
             :onClick #(stop-playing)}]
+   [:p (:play @inst-state)]
    ])
 
 (defn mount [el]
