@@ -16,7 +16,7 @@
                                    :freq 3000
                                    :minFreq 2000
                                    :maxFreq 6000
-                                   :play 0}))
+                                   }))
 
 (defn get-app-element []
   (gdom/getElement "app"))
@@ -37,13 +37,15 @@
 
 
 (defn start-playing []
-  (if (= 0 (:play @inst-state))
-    (do (swap! inst-state assoc-in [:play] 1)
-        (. osc start 0))))
+  (if (= 0 (:status @inst-state))
+    (do (swap! inst-state assoc-in [:status] 1)
+        (. osc start 0)
+        )))
 
 (defn stop-playing []
      (. osc stop)
-        (swap! inst-state assoc-in [:play] 0))
+  (swap! inst-state assoc-in [:status] 0)
+  )
 
 (defn hello-world []
   [:div
@@ -55,7 +57,7 @@
    [:input {:type "button"
             :value "Stop"
             :onClick #(stop-playing)}]
-   [:p (:play @inst-state)]
+   [:p (:status @inst-state)]
    ])
 
 (defn mount [el]
